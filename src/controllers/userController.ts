@@ -7,12 +7,11 @@ export const createUser = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, firebaseId } = req.body
+    const { firstName, lastName, email, firebaseId } = req.body
     const user: IUser = new User({
       firstName,
       lastName,
       email,
-      password,
       firebaseId,
     })
 
@@ -26,12 +25,12 @@ export const createUser = async (
 }
 
 // Get all users
-export const getAllUsers = async (
+export const getAllUsersByOrganization = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const users = await User.find().select("-password")
+    const users = await User.find()
     res.status(200).json(users)
   } catch (error) {
     res.status(500).json({ message: "Error retrieving users", error: error })
@@ -45,7 +44,12 @@ export const getUserByFirebaseId = async (
 ): Promise<void> => {
   try {
     const { firebaseId } = req.params
-    const user = await User.findOne({ firebaseId }).select("-password")
+    if (!firebaseId) {
+      res.status(400).json({ message: "Firebase ID not available" })
+      return
+    }
+
+    const user = await User.findOne({ firebaseId })
 
     if (!user) {
       res.status(404).json({ message: "User not found" })
@@ -58,28 +62,35 @@ export const getUserByFirebaseId = async (
   }
 }
 
-// Update a user by firebaseId
-export const updateUser = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+// Update a user by firebaseId (only if the firebaseId in the URL matches the authenticated user's token)
+export const updateUser = async (req: any, res: any) => {
   try {
     const { firebaseId } = req.params
     const { firstName, lastName, email } = req.body
 
+    // Check if the firebaseId from the URL matches the uid from the Firebase token (authenticated user)
+
+    if (!req.user || req.user.uid !== firebaseId) {
+      res.status(403).json({ message: "You can only update your own account" })
+      return
+    }
+
+    // Update user information in the database
     const user = await User.findOneAndUpdate(
       { firebaseId },
       { firstName, lastName, email },
       { new: true }
-    ).select("-password")
+    )
 
     if (!user) {
       res.status(404).json({ message: "User not found" })
       return
     }
 
+    // Return the updated user information
     res.status(200).json({ message: "User updated successfully", user })
   } catch (error) {
-    res.status(500).json({ message: "Error updating user", error: error })
+    console.error("Error updating user:", error)
+    res.status(500).json({ message: "Error updating user", error })
   }
 }
