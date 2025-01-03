@@ -1,24 +1,35 @@
-import mongoose, { Document, Schema } from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose, { Document, Schema } from "mongoose"
 
-// Define the interface for the user model
 export interface IUser extends Document {
-  firstName: string;
-  lastName: string;
-  email: string;
-  firebaseId: string;
-  comparePassword(candidatePassword: string): Promise<boolean>;
+  firstName: string
+  lastName: string
+  email: string
+  firebaseId: string
+  role: string
+  organizationName: string
 }
 
-// Define the schema for the user model
 const userSchema = new Schema<IUser>({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   firebaseId: { type: String, required: true, unique: true },
+  role: {
+    type: String,
+    enum: ["admin", "customer", "team-member"],
+    default: "customer",
+  },
+  organizationName: { type: String, required: false },
+})
+
+// validation for organizationName
+userSchema.pre("save", function (next) {
+  if (this.role === "team-member" && (!this.organizationName || this.organizationName === "none")) {
+    return next(new Error("Organization name is required for users with role 'team-member'"));
+  }
+  next();
 });
 
-// Create a new user model
-const User = mongoose.model<IUser>('User', userSchema);
+const User = mongoose.model<IUser>("User", userSchema)
 
-export default User;
+export default User
