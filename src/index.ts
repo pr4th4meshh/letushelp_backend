@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser"
 import mongoose from "mongoose"
 import cors from "cors"
 import userRouter from "./routes/userRoute"
+import organizationRouter from "./routes/organizationRoute"
 
 const app = express()
 
@@ -40,7 +41,8 @@ app.use(cors(corsOptions))
 app.use(express.urlencoded({ extended: false }))
 
 // external routes
-app.use('/api/v1/users', userRouter);
+app.use("/api/v1/users", userRouter)
+app.use("/api/v1/organizations", organizationRouter)
 
 app.listen(8080, () => {
   console.log(`Server started on port ${PORT}`)

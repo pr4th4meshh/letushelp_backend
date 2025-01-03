@@ -4,9 +4,9 @@ import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = express.Router()
 
-router.post("/", authMiddleware, createUser)
-router.get('/:firebaseId', authMiddleware, getUserByFirebaseId);
-router.get("/", getAllUsersByOrganization);
+router.post("/", createUser)
+router.get('/:firebaseId', getUserByFirebaseId);
+router.get("/organization/:organizationName", getAllUsersByOrganization);
 router.put('/:firebaseId', authMiddleware, updateUser);
 
 export default router;
