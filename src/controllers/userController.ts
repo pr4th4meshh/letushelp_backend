@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import User, { IUser } from "../models/userModel"
+import Organization from "../models/organizationModel"
 
 // Create a new user
 export const createUser = async (
@@ -7,13 +8,28 @@ export const createUser = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { firstName, lastName, email, firebaseId } = req.body
+    const { firstName, lastName, email, firebaseId, role, organizationName } =
+      req.body
     const user: IUser = new User({
       firstName,
       lastName,
       email,
       firebaseId,
+      role,
+      organizationName,
     })
+
+    if(role === "team-member" && organizationName) {
+      const organization = await Organization.findOne({ organizationName })
+
+      if(!organization) {
+        res.status(404).json({ message: "Organization not found" })
+        return;
+      }
+
+      organization.users.push(user._id as string)
+      await organization.save()
+    }
 
     await user.save()
     res
@@ -30,7 +46,8 @@ export const getAllUsersByOrganization = async (
   res: Response
 ): Promise<void> => {
   try {
-    const users = await User.find()
+    const { organizationName } = req.params
+    const users = await User.find({ organizationName })
     res.status(200).json(users)
   } catch (error) {
     res.status(500).json({ message: "Error retrieving users", error: error })
@@ -49,7 +66,9 @@ export const getUserByFirebaseId = async (
       return
     }
 
-    const user = await User.findOne({ firebaseId })
+    const user = await User.findOne({ firebaseId }).select(
+      "-password -firebaseId"
+    )
 
     if (!user) {
       res.status(404).json({ message: "User not found" })
@@ -66,7 +85,7 @@ export const getUserByFirebaseId = async (
 export const updateUser = async (req: any, res: any) => {
   try {
     const { firebaseId } = req.params
-    const { firstName, lastName, email } = req.body
+    const { firstName, lastName, email, role, organizationName } = req.body
 
     // Check if the firebaseId from the URL matches the uid from the Firebase token (authenticated user)
 
@@ -78,7 +97,7 @@ export const updateUser = async (req: any, res: any) => {
     // Update user information in the database
     const user = await User.findOneAndUpdate(
       { firebaseId },
-      { firstName, lastName, email },
+      { firstName, lastName, email, role, organizationName },
       { new: true }
     )
 

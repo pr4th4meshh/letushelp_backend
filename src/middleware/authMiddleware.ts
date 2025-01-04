@@ -1,11 +1,11 @@
 import admin from "../firebaseAdmin";
 
-export const authMiddleware = async (req, res, next)=> {
+export const authMiddleware = async (req: any, res: any, next: any)=> {
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
-       res.status(403).json({ message: "No token provided" })
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+       res.status(403).json({ message: "Unauthorized: No token provided" })
        return;
     }
 
@@ -18,11 +18,8 @@ export const authMiddleware = async (req, res, next)=> {
 
     // Verify token using Firebase Admin SDK
     const decodedToken = await admin.auth().verifyIdToken(token);
-    console.log("DECODED_TOKEN", decodedToken)
     req.user = decodedToken;
-    console.log("REQ_USER", req.user.uid)
-
-    next();
+    next(); // move ahead to the next middleware/route handler
   } catch (error) {
     console.error("Token verification failed:", error);
     res.status(403).json({ message: "Unauthorized" });
