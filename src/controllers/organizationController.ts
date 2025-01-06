@@ -61,7 +61,7 @@ export const getAllOrganizations = async (
   res: Response
 ): Promise<void> => {
   try {
-    const allOrganizations = await Organization.find()
+    const allOrganizations = await Organization.find().populate('gigs')
 
     if (allOrganizations.length === 0) {
       res.status(404).json({ message: "No organizations found" })
@@ -72,5 +72,25 @@ export const getAllOrganizations = async (
   } catch (error) {
     res.status(500).json({ message: "Error retrieving organizations", error })
     return
+  }
+}
+
+// get organization by name
+export const getOrganizationByName = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { organizationName } = req.params
+    const organization = await Organization.findOne({ organizationName })
+
+    if (!organization) {
+      res.status(404).json({ message: "Organization not found" })
+      return
+    }
+
+    res.status(200).json(organization)
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving organization", error })
   }
 }
