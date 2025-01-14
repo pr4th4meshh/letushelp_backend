@@ -34,25 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const userSchema = new mongoose_1.Schema({
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    firebaseId: { type: String, required: true, unique: true },
-    role: {
-        type: String,
-        enum: ["admin", "volunteer", "team-member"],
-        default: "volunteer",
-    },
-    organizationName: { type: String, required: false },
+const organizationSchema = new mongoose_1.Schema({
+    organizationName: { type: String, required: true, unique: true },
+    users: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
+    gigs: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "Gig" }],
 });
-// validation for organizationName
-userSchema.pre("save", function (next) {
-    if (this.role === "team-member" &&
-        (!this.organizationName || this.organizationName === "none")) {
-        return next(new Error("Organization name is required for users with role 'team-member'"));
-    }
-    next();
-});
-const User = mongoose_1.default.model("User", userSchema);
-exports.default = User;
+const Organization = mongoose_1.default.model("Organization", organizationSchema);
+exports.default = Organization;

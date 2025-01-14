@@ -14,16 +14,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateUser = exports.getUserByFirebaseId = exports.getAllUsersByOrganization = exports.createUser = void 0;
 const userModel_1 = __importDefault(require("../models/userModel"));
+const organizationModel_1 = __importDefault(require("../models/organizationModel"));
 // Create a new user
 const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { firstName, lastName, email, firebaseId } = req.body;
+        const { firstName, lastName, email, firebaseId, role, organizationName } = req.body;
         const user = new userModel_1.default({
             firstName,
             lastName,
             email,
             firebaseId,
+            role,
+            organizationName,
         });
+        if (role === "team-member" && organizationName) {
+            const organization = yield organizationModel_1.default.findOne({ organizationName });
+            if (!organization) {
+                res.status(404).json({ message: "Organization not found" });
+                return;
+            }
+            organization.users.push(user._id);
+            yield organization.save();
+        }
         yield user.save();
         res
             .status(201)
@@ -37,7 +49,8 @@ exports.createUser = createUser;
 // Get all users
 const getAllUsersByOrganization = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const users = yield userModel_1.default.find();
+        const { organizationName } = req.params;
+        const users = yield userModel_1.default.find({ organizationName });
         res.status(200).json(users);
     }
     catch (error) {
@@ -53,7 +66,7 @@ const getUserByFirebaseId = (req, res) => __awaiter(void 0, void 0, void 0, func
             res.status(400).json({ message: "Firebase ID not available" });
             return;
         }
-        const user = yield userModel_1.default.findOne({ firebaseId });
+        const user = yield userModel_1.default.findOne({ firebaseId }).select("-password -firebaseId");
         if (!user) {
             res.status(404).json({ message: "User not found" });
             return;
@@ -68,18 +81,15 @@ exports.getUserByFirebaseId = getUserByFirebaseId;
 // Update a user by firebaseId (only if the firebaseId in the URL matches the authenticated user's token)
 const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { firebaseId } = req.params; // Get firebaseId from URL parameters
-        const { firstName, lastName, email } = req.body; // Get updated user details from body
+        const { firebaseId } = req.params;
+        const { firstName, lastName, email, role, organizationName } = req.body;
         // Check if the firebaseId from the URL matches the uid from the Firebase token (authenticated user)
         if (!req.user || req.user.uid !== firebaseId) {
             res.status(403).json({ message: "You can only update your own account" });
             return;
         }
         // Update user information in the database
-        const user = yield userModel_1.default.findOneAndUpdate({ firebaseId }, // Find user by firebaseId
-        { firstName, lastName, email }, // Update the user's details
-        { new: true } // Return the updated user
-        );
+        const user = yield userModel_1.default.findOneAndUpdate({ firebaseId }, { firstName, lastName, email, role, organizationName }, { new: true });
         if (!user) {
             res.status(404).json({ message: "User not found" });
             return;
