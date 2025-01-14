@@ -5,6 +5,7 @@ import mongoose from "mongoose"
 import cors from "cors"
 import userRouter from "./routes/userRoute"
 import organizationRouter from "./routes/organizationRoute"
+import gigRouter from "./routes/gigRoute"
 
 const app = express()
 
@@ -32,7 +33,7 @@ const corsOptions = {
     "https://letushelp-dev.vercel.app",
   ],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
 }
 
 app.use(express.json())
@@ -43,6 +44,7 @@ app.use(express.urlencoded({ extended: false }))
 // external routes
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/organizations", organizationRouter)
+app.use("/api/v1/gigs", gigRouter)
 
 app.listen(8080, () => {
   console.log(`Server started on port ${PORT}`)
