@@ -16,19 +16,26 @@ const userSchema = new Schema<IUser>({
   firebaseId: { type: String, required: true, unique: true },
   role: {
     type: String,
-    enum: ["admin", "customer", "team-member"],
-    default: "customer",
+    enum: ["admin", "volunteer", "team-member"],
+    default: "volunteer",
   },
   organizationName: { type: String, required: false },
 })
 
 // validation for organizationName
 userSchema.pre("save", function (next) {
-  if (this.role === "team-member" && (!this.organizationName || this.organizationName === "none")) {
-    return next(new Error("Organization name is required for users with role 'team-member'"));
+  if (
+    this.role === "team-member" &&
+    (!this.organizationName || this.organizationName === "none")
+  ) {
+    return next(
+      new Error(
+        "Organization name is required for users with role 'team-member'"
+      )
+    )
   }
-  next();
-});
+  next()
+})
 
 const User = mongoose.model<IUser>("User", userSchema)
 

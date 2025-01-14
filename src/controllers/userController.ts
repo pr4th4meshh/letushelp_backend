@@ -19,12 +19,12 @@ export const createUser = async (
       organizationName,
     })
 
-    if(role === "team-member" && organizationName) {
+    if (role === "team-member" && organizationName) {
       const organization = await Organization.findOne({ organizationName })
 
-      if(!organization) {
+      if (!organization) {
         res.status(404).json({ message: "Organization not found" })
-        return;
+        return
       }
 
       organization.users.push(user._id as string)
