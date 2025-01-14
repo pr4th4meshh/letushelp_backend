@@ -9,6 +9,8 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const cors_1 = __importDefault(require("cors"));
 const userRoute_1 = __importDefault(require("./routes/userRoute"));
+const organizationRoute_1 = __importDefault(require("./routes/organizationRoute"));
+const gigRoute_1 = __importDefault(require("./routes/gigRoute"));
 const app = (0, express_1.default)();
 dotenv_1.default.config();
 const PORT = process.env.PORT;
@@ -31,14 +33,16 @@ const corsOptions = {
         "https://letushelp-dev.vercel.app",
     ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
 };
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
 app.use((0, cors_1.default)(corsOptions));
 app.use(express_1.default.urlencoded({ extended: false }));
 // external routes
-app.use('/api/v1/users', userRoute_1.default);
+app.use("/api/v1/users", userRoute_1.default);
+app.use("/api/v1/organizations", organizationRoute_1.default);
+app.use("/api/v1/gigs", gigRoute_1.default);
 app.listen(8080, () => {
     console.log(`Server started on port ${PORT}`);
 });

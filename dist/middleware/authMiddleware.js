@@ -17,8 +17,8 @@ const firebaseAdmin_1 = __importDefault(require("../firebaseAdmin"));
 const authMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const authHeader = req.headers.authorization;
-        if (!authHeader) {
-            res.status(403).json({ message: "No token provided" });
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            res.status(403).json({ message: "Unauthorized: No token provided" });
             return;
         }
         const token = authHeader.split(" ")[1];
@@ -28,9 +28,17 @@ const authMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         }
         // Verify token using Firebase Admin SDK
         const decodedToken = yield firebaseAdmin_1.default.auth().verifyIdToken(token);
-        console.log("DECODED_TOKEN", decodedToken);
         req.user = decodedToken;
-        console.log("REQ_USER", req.user.uid);
+        const userDoc = yield firebaseAdmin_1.default.firestore().collection("users").doc(decodedToken.uid).get();
+        if (!userDoc.exists) {
+            return res.status(403).json({ message: "User not found" });
+        }
+        const userData = userDoc.data();
+        const role = userData === null || userData === void 0 ? void 0 : userData.role;
+        if (!role) {
+            return res.status(403).json({ message: "Role not found for this user" });
+        }
+        req.user.role = role;
         next();
     }
     catch (error) {
